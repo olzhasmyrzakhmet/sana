@@ -33,6 +33,19 @@ export function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
+/** Компактный формат для осей графиков и мини-цифр. */
+export function formatCompact(value: number, format: MetricFormat = "number"): string {
+  if (!Number.isFinite(value)) return "—";
+  if (format === "percent") return `${round1(value)}%`;
+  const abs = Math.abs(value);
+  let s: string;
+  if (abs >= 1e9) s = `${round1(value / 1e9)} млрд`;
+  else if (abs >= 1e6) s = `${round1(value / 1e6)} млн`;
+  else if (abs >= 1e3) s = `${round1(value / 1e3)} тыс`;
+  else s = groupThousands(Math.round(value));
+  return format === "money" ? `${s} ₸` : s;
+}
+
 export function formatDeltaPct(pct: number | null): string {
   if (pct === null || !Number.isFinite(pct)) return "";
   const sign = pct > 0 ? "+" : "";

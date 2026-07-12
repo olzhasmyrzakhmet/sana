@@ -45,6 +45,19 @@ export function packManifest(pack: Pack) {
   };
 }
 
+/** Лёгкое клиент-безопасное описание пака (для UI: подсказки, названия). */
+export function clientPackMeta(pack: Pack) {
+  return {
+    id: pack.id,
+    title: pack.title.ru,
+    sampleQuestions: pack.sampleQuestions,
+  };
+}
+
+export function allClientPackMetas() {
+  return listPacks().map(clientPackMeta);
+}
+
 /** Множества id для валидации плана. */
 export function packIds(pack: Pack) {
   return {
