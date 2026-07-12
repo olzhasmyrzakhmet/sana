@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(git --version)",
+      "Bash(vercel --version)",
+      "Bash(turso --version)",
+      "Bash(mkdir -p docs)",
+      "Bash(git mv *)",
+      "Bash(mv BRIEF.md SPEC.md PLAN.md docs/)",
+      "Bash(mv critic.md PROMPT.txt START_HERE.md docs/)",
+      "Bash(mv sana-kit *)",
+      "Bash(npx --yes create-next-app@latest .scaffold-tmp --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --use-npm --skip-install --no-turbopack --yes)",
+      "Bash(npx --yes create-next-app@latest scaffold-tmp --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --use-npm --skip-install --no-turbopack --yes)",
+      "Bash(mv docs/CLAUDE.md.root CLAUDE.md)",
+      "Bash(rm -f docs/CLAUDE.md.orig)",
+      "Bash(npm install *)",
+      "Bash(npx --yes shadcn@latest init -b neutral -d --yes)",
+      "Bash(npx --yes shadcn@latest init -b radix -d --yes)"
+    ]
+  }
+}
