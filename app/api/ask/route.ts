@@ -7,6 +7,7 @@ import { compileSql } from "@/lib/engine/compiler";
 import { run } from "@/lib/engine/runner";
 import { computeDeltas } from "@/lib/engine/deltas";
 import { selectChart } from "@/lib/engine/chartSelector";
+import { applyRbac } from "@/lib/engine/rbac";
 import { planFromQuestion, makeInsight, makeFollowups } from "@/lib/ai/provider";
 import { recordAsk } from "@/lib/data/history";
 import { getSessionUser } from "@/lib/auth";
@@ -87,19 +88,9 @@ export async function POST(req: Request) {
     const plan = planResult.plan;
 
     // 2. RBAC: сервер добавляет фильтр из scope (не LLM)
-    let scoped = false;
-    let scopedValue: string | null = null;
-    if (user?.scope && pack.rbacDimension && pack.dimensions[pack.rbacDimension]) {
-      const v = user.scope[pack.rbacDimension];
-      if (typeof v === "string" || typeof v === "number") {
-        plan.filters = [
-          ...plan.filters.filter((f) => f.dim !== pack.rbacDimension),
-          { dim: pack.rbacDimension, op: "=", value: v },
-        ];
-        scoped = true;
-        scopedValue = String(v);
-      }
-    }
+    const rbac = applyRbac(plan, pack, user?.scope);
+    const scoped = rbac.scoped;
+    const scopedValue = rbac.value;
 
     // 3-4. Компиляция + выполнение
     const compiled = compileSql(plan, pack);
