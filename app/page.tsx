@@ -1,9 +1,28 @@
 import Link from "next/link";
 import { Sparkles, ArrowRight, ShieldCheck, Database, Code2 } from "lucide-react";
+import { landingStats } from "@/lib/data/history";
+import { computeInsights } from "@/lib/engine/anomalies";
+import { formatCompact } from "@/lib/format";
+import { InsightShowcase, type ShowcaseInsight } from "@/components/landing/InsightShowcase";
 
 export const dynamic = "force-dynamic";
 
-export default function Landing() {
+export default async function Landing() {
+  // Живые данные из БД; при недоступности БД (нет кредов) — секции просто скрыты (без нулей).
+  let stats: { questions: number; dataRows: number; medianMs: number } | null = null;
+  let insights: ShowcaseInsight[] = [];
+  try {
+    const s = await landingStats();
+    if (s.questions > 0 && s.dataRows > 0) stats = s;
+  } catch {
+    /* нет БД — не показываем счётчики */
+  }
+  try {
+    insights = (await computeInsights("auto")) as ShowcaseInsight[];
+  } catch {
+    /* нет БД — не показываем инсайты */
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border">
@@ -45,7 +64,17 @@ export default function Landing() {
           </Link>
         </div>
 
-        <div className="mt-20 grid w-full max-w-4xl gap-4 sm:grid-cols-3">
+        {stats && (
+          <div className="mt-14 grid w-full max-w-3xl grid-cols-3 gap-4">
+            <Counter value={stats.questions.toLocaleString("ru-RU")} label="вопросов обработано" />
+            <Counter value={formatCompact(stats.dataRows)} label="строк данных" />
+            <Counter value={`${stats.medianMs} мс`} label="медиана ответа" />
+          </div>
+        )}
+
+        <InsightShowcase insights={insights} />
+
+        <div className="mt-24 grid w-full max-w-4xl gap-4 sm:grid-cols-3">
           <Feature icon={<Code2 />} title="AI понимает вопрос">
             LLM переводит вопрос в строгий JSON-план по семантическому слою — без свободного SQL.
           </Feature>
@@ -63,6 +92,15 @@ export default function Landing() {
           SANA · «AI понимает вопрос — считает база — человек видит, как посчитано»
         </div>
       </footer>
+    </div>
+  );
+}
+
+function Counter({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card px-4 py-5">
+      <div className="tnum text-2xl font-semibold text-[var(--data)] sm:text-3xl">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }
