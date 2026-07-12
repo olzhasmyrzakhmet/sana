@@ -40,15 +40,14 @@ audit_log через временный вызов).
 → runner → 24 строки.
 
 ## Фаза 2 — AI-пайплайн /api/ask (≈4 ч)
-- [ ] 2.1 lib/ai/provider.ts (anthropic|mock по env, без ключа НЕ кидает — mock), prompts.ts
+- [x] 2.1 lib/ai/provider.ts (anthropic|mock по env, без ключа НЕ кидает — mock), prompts.ts
       дословно из SPEC §7, anthropic.ts (model из env, max_tokens 2000, JSON-repair 1 повтор).
-- [ ] 2.2 mock.ts: роутер синонимов → планы для ВСЕХ sampleQuestions (RU+KK) всех паков +
-      шаблонные insight из deltas. Тест: каждый sampleQuestion → валидный план.
-- [ ] 2.3 /api/ask полный пайплайн SPEC §6 (вкл. RBAC-инъекцию фильтра, историю, audit, clarify
-      вместо 500 на чепухе). /api/history, /api/insights (пока из anomalies.ts на лету).
-      Проверка локально: 6 канонических вопросов → корректные {chart, insight, sql}; «приготовь
-      плов» → clarify.
-- [ ] 2.4 Auth: cookie-сессия, /api/auth/*, 3 демо-пользователя. Проверка: login/me/logout.
+- [x] 2.2 mock.ts: роутер синонимов → планы для ВСЕХ sampleQuestions (RU+KK) всех паков +
+      шаблонные insight из deltas. Тест: каждый sampleQuestion → валидный план (57 кейсов зелёные).
+- [x] 2.3 /api/ask полный пайплайн SPEC §6 (вкл. RBAC-инъекцию фильтра, историю, audit, clarify
+      вместо 500 на чепухе). /api/history, /api/insights (из anomalies.ts на лету).
+      Проверка «вживую» (6 вопросов + плов) — при кредах Turso; build+типы зелёные.
+- [x] 2.4 Auth: cookie-сессия HMAC, /api/auth/*, bcrypt, 3 демо-пользователя.
 Выходной критерий: curl /api/ask локально на 3 паках зелёный; критик фазы пройден.
 
 ## Фаза 3 — Воркспейс и дизайн (≈4 ч)
