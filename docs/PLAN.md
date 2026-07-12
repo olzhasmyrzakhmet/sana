@@ -27,15 +27,15 @@
 audit_log через временный вызов).
 
 ## Фаза 1 — Semantic Layer + данные + компилятор (≈4 ч)
-- [ ] 1.1 lib/semantic/types.ts + packs/auto.ts (метрики/измерения/синонимы/12+ RU и 6+ KK
-      sampleQuestions по SPEC §4). Проверка: registry отдаёт пак, типы strict.
-- [ ] 1.2 seed фактов AUTO (~45k строк, PRNG seed=42, сезонность, 3 аномалии из BRIEF §4) +
-      retail (~20k) + bank (~10k) + 40 строк ask_history-сида (для живых счётчиков витрины).
-      Проверка: `npm run seed` идемпотентен; counts совпадают с ожидаемыми ±0.
-- [ ] 1.3 engine/planSchema.ts (zod по SPEC §5) + валидация ссылок на пак. Тесты.
-- [ ] 1.4 engine/compiler.ts + runner.ts: whitelist, параметризация, compare-период, LIMIT.
+- [x] 1.1 lib/semantic/types.ts + packs/auto.ts (метрики/измерения/синонимы/12+ RU и 6+ KK
+      sampleQuestions по SPEC §4) + retail/bank + registry. Проверка: тесты registry зелёные.
+- [~] 1.2 seed фактов AUTO (~45k строк, PRNG seed=42, сезонность, 3 аномалии из BRIEF §4) +
+      retail (~20k) + bank (~10k) + 40 строк ask_history-сида. КОД готов (seed-facts.mjs);
+      запуск/проверка counts — как только придут креды Turso.
+- [x] 1.3 engine/planSchema.ts (zod по SPEC §5) + валидация ссылок на пак. Тесты.
+- [x] 1.4 engine/compiler.ts + runner.ts: whitelist, параметризация, compare-период, LIMIT.
       Тесты: инъекция в filter.value не попадает в SQL; метрика вне пака → ошибка 422.
-- [ ] 1.5 engine/deltas.ts + chartSelector.ts по SPEC §6. Тесты эталонных чисел и 6 форм графиков.
+- [x] 1.5 engine/deltas.ts + chartSelector.ts по SPEC §6. Тесты эталонных чисел и 6 форм графиков.
 Выходной критерий: `npm run test` ≥20 зелёных; руками: compile(план «выручка по месяцам») → SQL
 → runner → 24 строки.
 
