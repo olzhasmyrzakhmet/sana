@@ -9,15 +9,15 @@
       `@libsql/client zod recharts @anthropic-ai/sdk bcryptjs date-fns` + dev `vitest tsx`.
       shadcn init + button card input dialog badge tabs accordion table tooltip skeleton sheet.
       Проверка: build зелёный.
-- [ ] 0.2 **Turso с первого коммита**: lib/data/db.ts на @libsql/client; локально
-      `TURSO_DATABASE_URL=file:local.db`, на проде — реальные креды. .env.example. НИКАКОГО
-      better-sqlite3 как основного пути. Проверка: локальный select 1 работает.
-- [ ] 0.3 scripts/db-deploy.mjs (идемпотентные CREATE TABLE IF NOT EXISTS по SPEC §3) +
+- [x] 0.2 **Turso с первого коммита**: lib/data/db.ts на @libsql/client (web-клиент для
+      libsql:// — win32-arm64 не тянет нативный file:, см. TODO.md). .env.example. НИКАКОГО
+      better-sqlite3. Проверка select 1 — отложена до кредов Turso (0.7).
+- [x] 0.3 scripts/db-deploy.mjs (идемпотентные CREATE TABLE IF NOT EXISTS по SPEC §3) +
       scripts/seed.mjs (справочники+пользователи, факты — в фазе 1). package.json: seed, test,
       prod:verify. vercel.json buildCommand: `node scripts/db-deploy.mjs && next build`.
-- [ ] 0.4 /api/health/db (adapter, счётчики, commit SHA) — диагностика с первого дня.
-- [ ] 0.5 .claude/agents/critic.md уже в репо (из кита) — проверь, что виден как субагент.
-- [ ] 0.6 scripts/prod-verify.mjs по SPEC §11 (проверки, которых ещё нет, пока skip-помечены).
+- [x] 0.4 /api/health/db (adapter, счётчики, commit SHA) — диагностика с первого дня.
+- [x] 0.5 .claude/agents/critic.md уже в репо (из кита) — проверь, что виден как субагент.
+- [x] 0.6 scripts/prod-verify.mjs по SPEC §11 (проверки, которых ещё нет, пока skip-помечены).
 - [ ] 0.7 **Деплой №1 и фиксация проекта**: создай ОДИН проект Vercel, имя `sana`. Пользователь
       добавит TURSO_* и ANTHROPIC_API_KEY (скоуп Production!) — выведи ему точный список имён
       переменных. После его «готово»: пуш → выведи ФАКТИЧЕСКИЙ прод-домен из деплоя → захардкодь
