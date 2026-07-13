@@ -28,6 +28,10 @@ export function geminiWorkingModel(): string | null {
   return workingModel;
 }
 
+// Circuit breaker: при исчерпании квоты (429) не долбим API каждый запрос — короткий кулдаун,
+// в течение которого сразу уходим в безопасный резерв (быстро, без латентности).
+let cooldownUntil = 0;
+
 async function callModel(model: string, system: string, user: string): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const res = await fetch(url, {
@@ -57,6 +61,7 @@ async function callModel(model: string, system: string, user: string): Promise<s
 }
 
 async function complete(system: string, user: string): Promise<string> {
+  if (Date.now() < cooldownUntil) throw new Error("Gemini: кулдаун после 429 (квота)");
   // Если уже нашли рабочую модель — сразу её.
   const chain = workingModel ? [workingModel, ...modelChain()] : modelChain();
   let lastErr: unknown = null;
@@ -68,11 +73,16 @@ async function complete(system: string, user: string): Promise<string> {
     } catch (e) {
       lastErr = e;
       const status = (e as { status?: number }).status;
-      // 404 (модель недоступна) или 429 (квота на конкретной модели) → пробуем следующую:
-      // у разных free-моделей отдельные лимиты. 429 быстрый, каждый вызов ограничен 14с.
-      if (status === 404 || status === 429) {
+      if (status === 404) {
+        // модель недоступна на этом ключе → пробуем следующую (быстро)
         if (model === workingModel) workingModel = null;
         continue;
+      }
+      if (status === 429) {
+        // квота исчерпана (обычно на весь проект) — не перебираем модели: быстрый резерв + кулдаун
+        if (model === workingModel) workingModel = null;
+        cooldownUntil = Date.now() + 45_000;
+        throw e;
       }
       throw e;
     }
