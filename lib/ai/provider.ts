@@ -14,6 +14,13 @@ function aiMode(): AiMode {
   return "none";
 }
 
+// По умолчанию AI тратится ТОЛЬКО на понимание вопроса (план) — 1 вызов на запрос,
+// чтобы бесплатного лимита провайдера хватило на демо. Вывод/подсказки — детерминированные
+// шаблоны (тоже по фактическим числам). AI_INSIGHT=1 включает AI-вывод, если есть квота.
+function useAiExtras(): boolean {
+  return process.env.AI_INSIGHT === "1" && aiMode() !== "none";
+}
+
 // Диагностика: последняя ошибка AI-провайдера (для /api/health/db).
 let lastAiError: string | null = null;
 export function getLastAiError(): string | null {
@@ -126,7 +133,7 @@ export async function makeInsight(
 ): Promise<{ summary: string; bullets: string[]; nextCheck: string }> {
   const lang = detectLang(question);
   const mode = aiMode();
-  if (mode !== "none") {
+  if (useAiExtras()) {
     try {
       const ad = await getAdapter(mode);
       const numbers = JSON.stringify({
@@ -148,7 +155,7 @@ export async function makeInsight(
 
 export async function makeFollowups(question: string, plan: Plan, pack: Pack): Promise<string[]> {
   const mode = aiMode();
-  if (mode !== "none") {
+  if (useAiExtras()) {
     try {
       const ad = await getAdapter(mode);
       const ids = [...Object.keys(pack.metrics), ...Object.keys(pack.dimensions)].join(",");
