@@ -3,8 +3,8 @@
 // BASE фиксируется в фазе 0.7 (DEFAULT_BASE). Проверки для ещё не готовых эндпоинтов
 // помечены enabled:false и включаются по мере реализации фич.
 
-// --- Зафиксированный прод-домен (задать в фазе 0.7 после первого деплоя) ---
-const DEFAULT_BASE = "";
+// --- Зафиксированный прод-домен ---
+const DEFAULT_BASE = "https://sana-rho-ten.vercel.app";
 const BASE = (process.env.PROD_BASE || DEFAULT_BASE).replace(/\/$/, "");
 
 if (!BASE) {
@@ -70,7 +70,7 @@ const checks = [
   {
     id: 1,
     name: "GET / → 200, «Спросите», без нулевых счётчиков",
-    enabled: false,
+    enabled: true,
     async run() {
       const { status, text } = await req("GET", "/");
       if (status !== 200) return fail(`status=${status}`);
@@ -82,7 +82,7 @@ const checks = [
   {
     id: 2,
     name: "POST /api/auth/login (ceo) → 200",
-    enabled: false,
+    enabled: true,
     async run() {
       clearCookies();
       const { status, json } = await req("POST", "/api/auth/login", {
@@ -96,7 +96,7 @@ const checks = [
   {
     id: 3,
     name: "POST /api/ask (выручка по месяцам) → line + запись в историю",
-    enabled: false,
+    enabled: true,
     async run() {
       const q = "Какая выручка по месяцам за последний год?";
       const { status, json } = await req("POST", "/api/ask", {
@@ -117,7 +117,7 @@ const checks = [
   {
     id: 4,
     name: "POST /api/ask (казахский) → 200, rows>0",
-    enabled: false,
+    enabled: true,
     async run() {
       const { status, json } = await req("POST", "/api/ask", {
         question: "Өткен айдағы ең көп сатылған модель қандай?",
@@ -130,7 +130,7 @@ const checks = [
   {
     id: 5,
     name: "REGION scope → тот же топ дилеров, ровно 1 регион, scoped=true",
-    enabled: false,
+    enabled: true,
     async run() {
       clearCookies();
       await req("POST", "/api/auth/login", { email: "region@demo.kz", password: "demo123" });
@@ -148,7 +148,7 @@ const checks = [
   {
     id: 6,
     name: "POST /api/ask (pack=retail) → 200",
-    enabled: false,
+    enabled: true,
     async run() {
       clearCookies();
       await req("POST", "/api/auth/login", { email: "ceo@demo.kz", password: "demo123" });
@@ -163,7 +163,7 @@ const checks = [
   {
     id: 7,
     name: "GET /legacy-bi (widget) и /embed → 200",
-    enabled: false,
+    enabled: true,
     async run() {
       const a = await req("GET", "/legacy-bi");
       if (a.status !== 200 || !a.text.includes("widget")) return fail("legacy-bi без widget");
@@ -175,7 +175,7 @@ const checks = [
   {
     id: 8,
     name: "GET /api/insights?pack=auto → 3 инсайта",
-    enabled: false,
+    enabled: true,
     async run() {
       const { status, json } = await req("GET", "/api/insights?pack=auto");
       const n = Array.isArray(json?.insights) ? json.insights.length : Array.isArray(json) ? json.length : 0;
@@ -186,7 +186,7 @@ const checks = [
   {
     id: 9,
     name: "Невалидный вопрос → 200 с clarify (не 500)",
-    enabled: false,
+    enabled: true,
     async run() {
       const { status, json } = await req("POST", "/api/ask", {
         question: "приготовь плов",

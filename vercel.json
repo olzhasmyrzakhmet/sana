@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/db-deploy.mjs && next build"
+  "buildCommand": "node scripts/db-deploy.mjs && node scripts/seed-if-empty.mjs && next build"
 }

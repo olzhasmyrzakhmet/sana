@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LogOut, History as HistoryIcon, Sparkles } from "lucide-react";
+import { LogOut, History as HistoryIcon, Sparkles, HelpCircle } from "lucide-react";
+import { DemoTour } from "./DemoTour";
 import type { AskResponse, ClientPackMeta, FeedItem, HistoryItem, PublicUser } from "@/components/ask/types";
 import { AskBar } from "@/components/ask/AskBar";
 import { AnswerCard } from "@/components/ask/AnswerCard";
@@ -15,8 +16,16 @@ export function Workspace({ user, packs }: { user: PublicUser; packs: ClientPack
   const [packId, setPackId] = useState<ClientPackMeta["id"]>("auto");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [tour, setTour] = useState(false);
   const pack = packs.find((p) => p.id === packId)!;
   const analyst = user.role === "ANALYST";
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("sana_tour_seen")) {
+      setTour(true);
+      localStorage.setItem("sana_tour_seen", "1");
+    }
+  }, []);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -69,6 +78,14 @@ export function Workspace({ user, packs }: { user: PublicUser; packs: ClientPack
           </Link>
           <PackSwitcher packs={packs} current={packId} onChange={setPackId} />
           <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setTour(true)}
+              title="Демо-тур"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+              Тур
+            </button>
             <RoleBadge user={user} />
             <button
               onClick={logout}
@@ -125,6 +142,8 @@ export function Workspace({ user, packs }: { user: PublicUser; packs: ClientPack
           </div>
         </aside>
       </div>
+
+      <DemoTour open={tour} onClose={() => setTour(false)} />
     </div>
   );
 }

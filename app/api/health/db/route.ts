@@ -28,7 +28,12 @@ export async function GET() {
         counts[t] = null; // таблицы ещё нет — не валим весь health
       }
     }
-    return NextResponse.json({ ok: true, db: info, commit, counts });
+    const ai = {
+      provider: process.env.AI_PROVIDER ?? "mock",
+      hasAnthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
+      model: process.env.AI_MODEL ?? "",
+    };
+    return NextResponse.json({ ok: true, db: info, commit, counts, ai });
   } catch (err) {
     return NextResponse.json(
       {

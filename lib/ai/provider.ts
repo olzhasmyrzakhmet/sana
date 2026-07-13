@@ -11,8 +11,8 @@ function useAnthropic(): boolean {
 }
 
 export type PlanResult =
-  | { kind: "plan"; plan: Plan; engine: Engine }
-  | { kind: "clarify"; clarify: string; suggestions: string[]; engine: Engine };
+  | { kind: "plan"; plan: Plan; engine: Engine; note?: string }
+  | { kind: "clarify"; clarify: string; suggestions: string[]; engine: Engine; note?: string };
 
 function suggestions(pack: Pack): string[] {
   return pack.sampleQuestions.slice(0, 3).map((s) => s.ru);
@@ -34,6 +34,7 @@ function extractClarify(raw: unknown): string | null {
 
 export async function planFromQuestion(question: string, pack: Pack): Promise<PlanResult> {
   const manifestJson = JSON.stringify(packManifest(pack));
+  let aiNote: string | undefined;
 
   if (useAnthropic()) {
     try {
@@ -53,8 +54,10 @@ export async function planFromQuestion(question: string, pack: Pack): Promise<Pl
         const plan = parseAndValidatePlan(raw2, pack);
         return { kind: "plan", plan, engine: "anthropic" };
       }
-    } catch {
-      // сеть/ключ/повторный фейл — уходим в резервный режим
+    } catch (e) {
+      // сеть/ключ/кредиты/повторный фейл — уходим в резервный режим, но НЕ молча
+      aiNote = e instanceof Error ? e.message : String(e);
+      console.error("[ai] anthropic недоступен, резервный режим:", aiNote);
     }
   }
 
@@ -62,12 +65,12 @@ export async function planFromQuestion(question: string, pack: Pack): Promise<Pl
   if (rawMock) {
     try {
       const plan = parseAndValidatePlan(rawMock, pack);
-      return { kind: "plan", plan, engine: "fallback" };
+      return { kind: "plan", plan, engine: "fallback", note: aiNote };
     } catch {
       /* mock дал невалидный план — clarify */
     }
   }
-  return { kind: "clarify", clarify: defaultClarify(), suggestions: suggestions(pack), engine: "fallback" };
+  return { kind: "clarify", clarify: defaultClarify(), suggestions: suggestions(pack), engine: "fallback", note: aiNote };
 }
 
 export async function makeInsight(
