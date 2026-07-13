@@ -51,6 +51,7 @@ async function getAdapter(mode: AiMode): Promise<Adapter> {
 export async function probeAi(): Promise<{ mode: AiMode; ok: boolean; error?: string; model?: string }> {
   const mode = aiMode();
   if (mode === "none") return { mode, ok: false, error: "провайдер/ключ не настроены" };
+  aiCallsAttempted++;
   try {
     if (mode === "gemini") {
       const m = await import("./gemini");
@@ -62,6 +63,7 @@ export async function probeAi(): Promise<{ mode: AiMode; ok: boolean; error?: st
     return { mode, ok: true, model: process.env.AI_MODEL || "claude-sonnet-4-6" };
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e);
+    aiCallsFailed++;
     lastAiError = err;
     return { mode, ok: false, error: err };
   }

@@ -214,17 +214,12 @@ const checks = [
       await req("POST", "/api/auth/login", { email: "ceo@demo.kz", password: "demo123" });
       const a = await req("POST", "/api/ask", { question: "Выручка по брендам за последний год", pack: "auto" });
       const engine = a.json?.engine;
-      if (engine === "anthropic" || engine === "gemini") {
-        if (!(a.json?.rowCount > 0)) return fail(`engine=${engine}, но rows=${a.json?.rowCount}`);
-        return pass(`engine=${engine}, rows=${a.json.rowCount} — AI живой`);
+      if (!(engine === "anthropic" || engine === "gemini")) {
+        const cause = String(ai.probe?.error || ai.lastError || a.json?.engineNote || "?");
+        return fail(`engine=fallback — живой AI не вызван. Причина: ${cause.slice(0, 120)}`);
       }
-      // engine=fallback: настроен, но провайдер не ответил. 429/квота — штатный безопасный резерв
-      // (предупреждение); иные ошибки (401/404/500) — реальная поломка (fail).
-      const cause = String(ai.probe?.error || ai.lastError || a.json?.engineNote || "?");
-      if (/429|quota|rate limit|resource_exhausted|кулдаун/i.test(cause)) {
-        return warn(`AI настроен, но квота провайдера исчерпана (429) → безопасный резерв. Причина: ${cause.slice(0, 90)}`);
-      }
-      return fail(`engine=fallback, провайдер не отвечает: ${cause.slice(0, 120)}`);
+      if (!(a.json?.rowCount > 0)) return fail(`engine=${engine}, но rows=${a.json?.rowCount}`);
+      return pass(`engine=${engine}, rows=${a.json.rowCount} — AI живой`);
     },
   },
 ];
