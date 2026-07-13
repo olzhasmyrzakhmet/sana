@@ -132,8 +132,10 @@ function buildFilters(plan: Plan, pack: Pack): { frag: string; args: SqlValue[] 
       parts.push(`${expr} BETWEEN ? AND ?`);
       args.push(vals[0] as SqlValue, vals[1] as SqlValue);
     } else {
+      // скалярные операторы: если пришёл массив (LLM ошибся) — берём первый скаляр, не роняем запрос
+      const v = Array.isArray(f.value) ? f.value[0] : f.value;
       parts.push(`${expr} ${OP_SQL[f.op]} ?`);
-      args.push(f.value as SqlValue);
+      args.push(v as SqlValue);
     }
   }
   return { frag: parts.join(" AND "), args };

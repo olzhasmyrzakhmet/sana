@@ -3,7 +3,7 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { ChartAuto } from "@/components/ask/ChartAuto";
 import type { AskOk } from "@/components/ask/types";
 import type { LiveExample } from "@/lib/data/liveExample";
-import { formatDeltaPct } from "@/lib/format";
+import { formatDeltaPct, formatCompact } from "@/lib/format";
 
 export function LiveAnswer({ ex }: { ex: LiveExample }) {
   // Собираем AskOk-совместимый объект для ChartAuto (реальные строки из Turso).
@@ -36,10 +36,12 @@ export function LiveAnswer({ ex }: { ex: LiveExample }) {
 
         {/* KPI + дельта */}
         {primary && (
-          <div className="flex items-end justify-between rounded-lg border border-border bg-background/60 px-4 py-3">
-            <div>
+          <div className="flex items-end justify-between gap-2 rounded-lg border border-border bg-background/60 px-4 py-3">
+            <div className="min-w-0">
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{primary.title}</div>
-              <div className="tnum mt-0.5 text-3xl font-semibold text-foreground">{primary.value}</div>
+              <div className="tnum mt-0.5 text-2xl font-semibold text-foreground sm:text-3xl">
+                {formatCompact(primary.raw, primary.format)}
+              </div>
             </div>
             {primary.deltaPct !== null && primary.direction && (
               <span

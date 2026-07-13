@@ -55,9 +55,10 @@ export async function planFromQuestion(question: string, pack: Pack): Promise<Pl
         return { kind: "plan", plan, engine: "anthropic" };
       }
     } catch (e) {
-      // сеть/ключ/кредиты/повторный фейл — уходим в резервный режим, но НЕ молча
-      aiNote = e instanceof Error ? e.message : String(e);
-      console.error("[ai] anthropic недоступен, резервный режим:", aiNote);
+      // Сырую ошибку провайдера (может содержать биллинг/инфраструктуру) — только в лог сервера,
+      // клиенту отдаём нейтральную причину.
+      console.error("[ai] anthropic недоступен, резервный режим:", e instanceof Error ? e.message : String(e));
+      aiNote = "резервный режим: AI-провайдер временно недоступен";
     }
   }
 

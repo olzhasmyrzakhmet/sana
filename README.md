@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SANA — «Спросите свои данные»
 
-## Getting Started
+**AI-аналитик внутри вашей BI.** Вопрос на естественном языке → готовый график, деловой вывод
+и панель «как посчитано». Ответ по фактическим данным, а не угадывание.
 
-First, run the development server:
+🔗 **Живой стенд:** https://sana-rho-ten.vercel.app  ·  статус: **MVP, готов к пилоту**
 
+> Формула: **AI понимает вопрос — считает база — человек видит, как посчитано.**
+> Галлюцинации закрыты архитектурой: LLM переводит вопрос в строгий JSON-план по семантическому
+> слою, компилятор собирает SQL из whitelist-фрагментов, расчёт делает Turso, LLM лишь формулирует
+> вывод из уже посчитанных чисел — и **не видит сырых строк данных**.
+
+## Демо-доступ (вход в один клик на `/login`, пароль `demo123`)
+| Роль | Логин | Что видит |
+|---|---|---|
+| CEO | `ceo@demo.kz` | все данные всех отраслей |
+| Директор региона | `region@demo.kz` | тот же вопрос → **только регион Алматы** (RBAC вживую) |
+| Аналитик | `analyst@demo.kz` | вкладку SQL в «Как посчитано» + историю всех запросов команды |
+
+## 7 требований ТЗ → где на стенде → где в коде
+| # | Требование | На стенде (URL) | В коде |
+|---|---|---|---|
+| 1 | Диалог на естественном языке в дашборде | `/app` (Ask-панель), `/legacy-bi` (виджет) | `app/api/ask`, `components/ask/*` |
+| 2 | Ответы на фактических данных, не угадывание | «Как посчитано» в любом ответе | `lib/semantic/*`, `lib/engine/compiler.ts`, `lib/engine/planSchema.ts` |
+| 3 | Автопостроение визуализаций | график в каждом ответе | `lib/engine/chartSelector.ts`, `components/ask/ChartAuto.tsx` |
+| 4 | Готовое аналитическое заключение | блок «Вывод» + дельты | `lib/engine/deltas.ts`, `lib/ai/*` |
+| 5 | Отраслевая настраиваемость | переключатель Авто·Ритейл·Банк в `/app` | `lib/semantic/packs/*`, `docs/ADD_NEW_PACK.md` |
+| 6 | Встраивание поверх существующей BI | `/legacy-bi` + сниппет в 1 строку | `public/widget.js`, `app/embed`, `components/widget/*` |
+| 7 | Безопасность корпоративного уровня | RBAC (CEO vs регион), AuditLog | `lib/engine/rbac.ts`, `lib/auth.ts`, `lib/data/history.ts` |
+
+## Демо-сценарий (5 минут)
+1. `/` — за 5 секунд ясно, что это; на первом экране **живой ответ из БД** (не картинка).
+2. `/login` → «Войти как CEO» → воркспейс.
+3. «Какая выручка по месяцам за последний год?» → line-график + KPI + вывод → раскрыть «Как посчитано».
+4. «Топ-5 дилеров по продажам в 2026» → bar + follow-up.
+5. Казахский: «Өткен айдағы ең көп сатылған модель қандай?» → корректный ответ.
+6. Выйти → «Войти как директор региона» → тот же топ → данные только по Алматы + плашка.
+7. Переключить пак на Ритейл → те же вопросы на другой отрасли.
+8. `/legacy-bi` → «чужой» дашборд + плавающая кнопка SANA поверх.
+
+## Стек
+Next.js 16 (App Router, TS strict) · Tailwind v4 + shadcn/ui (Radix) · **Turso/libSQL**
+(@libsql/client, web-драйвер) · zod · Recharts · @anthropic-ai/sdk (за адаптером с резервным
+режимом) · Vitest. Деплой: Vercel (buildCommand с идемпотентной миграцией+авто-сидом).
+
+## Запуск локально (3 команды)
 ```bash
+npm install
+# .env: TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, SESSION_SECRET,
+#       AI_PROVIDER=anthropic|mock, ANTHROPIC_API_KEY, AI_MODEL=claude-sonnet-4-6
+npm run seed        # засеять Turso (детерминированно: ~45k auto, 20k retail, 10k bank)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+Проверка прода: `npm run prod:verify` (11 проверок по реальному домену).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Тесты
+`npm run test` → **85 тестов** (компилятор/инъекции, planSchema, chartSelector 6 форм, deltas,
+RBAC, mock-роутер: все 57 sampleQuestions RU+KK резолвятся).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## AI-режим
+Ядро понимания языка — Anthropic (`claude-sonnet-4-6`) за адаптером. Без ключа/кредитов/сети
+адаптер детерминированно уходит в **резервный режим** (роутер канонических вопросов) — продукт
+продолжает отвечать корректно. `engine` и `/api/health/db.ai` показывают активный режим.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Подробнее: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ADD_NEW_PACK.md](docs/ADD_NEW_PACK.md)
