@@ -9,16 +9,16 @@ function key(): string {
   return k;
 }
 
-// Цепочка бесплатных моделей: на 404 (нет модели) / 429 (квота) пробуем следующую.
+// Цепочка бесплатных моделей (flash-lite/8b — выше free-квота). На 404 пробуем следующую.
 function modelChain(): string[] {
-  const preferred = process.env.GEMINI_MODEL;
+  const preferred = process.env.GEMINI_MODEL || "gemini-2.0-flash-lite";
   const chain = [
     preferred,
-    "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
-    "gemini-flash-latest",
-    "gemini-1.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
     "gemini-1.5-flash-8b",
+    "gemini-1.5-flash",
   ].filter(Boolean) as string[];
   return [...new Set(chain)];
 }
@@ -62,10 +62,11 @@ async function callModel(model: string, system: string, user: string): Promise<s
 
 async function complete(system: string, user: string): Promise<string> {
   if (Date.now() < cooldownUntil) throw new Error("Gemini: кулдаун после 429 (квота)");
-  // Если уже нашли рабочую модель — сразу её.
-  const chain = workingModel ? [workingModel, ...modelChain()] : modelChain();
+  // Рабочая модель — первой; пробуем максимум 3 модели, чтобы ограничить латентность.
+  const chain = [...new Set(workingModel ? [workingModel, ...modelChain()] : modelChain())].slice(0, 3);
   let lastErr: unknown = null;
-  for (const model of [...new Set(chain)]) {
+  let saw429 = false;
+  for (const model of chain) {
     try {
       const out = await callModel(model, system, user);
       workingModel = model;
@@ -73,21 +74,16 @@ async function complete(system: string, user: string): Promise<string> {
     } catch (e) {
       lastErr = e;
       const status = (e as { status?: number }).status;
-      if (status === 404) {
-        // модель недоступна на этом ключе → пробуем следующую (быстро)
-        if (model === workingModel) workingModel = null;
-        continue;
-      }
-      if (status === 429) {
-        // квота исчерпана (обычно на весь проект) — не перебираем модели: быстрый резерв + кулдаун
-        if (model === workingModel) workingModel = null;
-        cooldownUntil = Date.now() + 45_000;
-        throw e;
-      }
+      if (model === workingModel) workingModel = null;
+      if (status === 429) saw429 = true;
+      // 404 (нет модели) / 429 (квота этой модели) → пробуем следующую; иное — пробрасываем.
+      if (status === 404 || status === 429) continue;
       throw e;
     }
   }
-  throw lastErr instanceof Error ? lastErr : new Error("Gemini: все модели недоступны");
+  // Все попытки 429 → короткий кулдаун, чтобы не долбить исчерпанную квоту.
+  if (saw429) cooldownUntil = Date.now() + 30_000;
+  throw lastErr instanceof Error ? lastErr : new Error("Gemini: модели недоступны");
 }
 
 function extractJson(text: string): unknown {

@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       hasAnthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
       hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
       model: process.env.AI_PROVIDER === "gemini"
-        ? (process.env.GEMINI_MODEL ?? "gemini-2.0-flash")
+        ? (process.env.GEMINI_MODEL ?? "gemini-2.0-flash-lite")
         : (process.env.AI_MODEL ?? ""),
       lastError: getLastAiError(),
     };

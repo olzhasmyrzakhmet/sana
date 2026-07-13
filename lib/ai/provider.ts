@@ -50,7 +50,7 @@ export async function probeAi(): Promise<{ mode: AiMode; ok: boolean; error?: st
     if (mode === "gemini") {
       const m = await import("./gemini");
       await m.geminiProbe();
-      return { mode, ok: true, model: process.env.GEMINI_MODEL || "gemini-2.0-flash" };
+      return { mode, ok: true, model: m.geminiWorkingModel() || process.env.GEMINI_MODEL || "gemini-2.0-flash-lite" };
     }
     const m = await import("./anthropic");
     await m.anthropicProbe();
