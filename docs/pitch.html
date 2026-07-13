@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SANA — Спросите свои данные</title>
+<style>
+  :root{--bg:#0B0F0E;--card:#141B19;--fg:#E8EDEB;--mut:#8BA098;--bd:#223029;--data:#22D3EE;--pos:#A3E635;--neg:#F87171;--amber:#FBBF24}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  body{background:#050807;color:var(--fg);font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif}
+  .mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+  .tnum{font-variant-numeric:tabular-nums;font-family:ui-monospace,Consolas,monospace}
+  .slide{scroll-snap-align:start;width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:center;
+    padding:6vh 8vw;position:relative;background:
+      linear-gradient(#0d1211,#0b0f0e);border-bottom:1px solid var(--bd);overflow:hidden}
+  .slide::before{content:"";position:absolute;inset:0;opacity:.25;pointer-events:none;
+    background-image:linear-gradient(var(--bd) 1px,transparent 1px),linear-gradient(90deg,var(--bd) 1px,transparent 1px);
+    background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 0,#000,transparent 75%);
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 0,#000,transparent 75%)}
+  .slide>*{position:relative;z-index:1}
+  .tag{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--data)}
+  h1{font-size:clamp(38px,7vw,88px);line-height:1.02;letter-spacing:-.02em;font-weight:650}
+  h2{font-size:clamp(26px,4vw,46px);line-height:1.08;letter-spacing:-.01em;font-weight:640;margin:.3em 0}
+  .sub{color:var(--mut);font-size:clamp(15px,1.6vw,21px);max-width:60ch;margin-top:.7em;line-height:1.5}
+  .num{position:absolute;bottom:4vh;right:6vw;color:var(--mut);font-size:12px}
+  .brand{position:absolute;top:4vh;left:6vw;display:flex;align-items:center;gap:8px;color:var(--mut);font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--data);box-shadow:0 0 12px var(--data)}
+  .grid{display:grid;gap:16px;margin-top:2vh}
+  .g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:1fr 1fr}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px}
+  .card h3{font-size:17px;font-weight:600;margin-bottom:6px}
+  .card p{color:var(--mut);font-size:14px;line-height:1.45}
+  .step{font-size:12px;color:var(--data)}
+  .kpi{font-size:clamp(26px,3vw,40px);font-weight:680;color:var(--data)}
+  .klbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+  pre{background:#0b0f0e;border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:12px;color:var(--mut);white-space:pre-wrap;overflow:auto}
+  .pill{display:inline-block;border:1px solid var(--bd);border-radius:999px;padding:4px 12px;font-size:12px;color:var(--mut)}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:10px}
+  .bar{flex:1;background:linear-gradient(#22D3EE,#0891b2);border-radius:4px 4px 0 0}
+  .ok{color:var(--pos)}.bad{color:var(--neg)}
+  .good{border-color:rgba(163,230,53,.3);background:rgba(163,230,53,.06)}
+  .warn{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06)}
+  ul{list-style:none;margin-top:8px}ul li{padding:4px 0;color:var(--mut);font-size:14px}
+  ul li::before{content:"›";color:var(--data);margin-right:8px}
+  @media print{
+    html,body{background:#0b0f0e}
+    @page{size:1280px 720px;margin:0}
+    .slide{height:720px;width:1280px;page-break-after:always;break-after:page}
+  }
+</style>
+</head>
+<body>
+
+<!-- 1 ТИТУЛ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA · AI-аналитик в BI</div>
+  <div class="tag">не чат-бот рядом с BI — аналитик внутри неё</div>
+  <h1>Спросите свои <span style="color:var(--data)">данные</span></h1>
+  <p class="sub">Ответ по данным за секунды — готовый график, деловой вывод и панель «как посчитано».
+    Это черновик решения, а не угадывание.</p>
+  <div style="margin-top:3vh" class="mono">🔗 sana-rho-ten.vercel.app &nbsp;·&nbsp; демо-вход в один клик</div>
+  <div class="num">01 / 10</div>
+</section>
+
+<!-- 2 ПРОБЛЕМА -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">проблема</div>
+  <h2>BI купили все. Пользу извлекают 5%.</h2>
+  <p class="sub">Бизнес-пользователь видит графики, но за ответом на конкретный вопрос идёт к аналитику
+    и ждёт выгрузку.</p>
+  <div class="grid g4">
+    <div class="card"><div class="step">01</div><h3>Вопрос</h3><p>«Почему упали продажи в марте?»</p></div>
+    <div class="card"><div class="step">02</div><h3>→ Аналитик</h3><p>Постановка задачи, очередь.</p></div>
+    <div class="card"><div class="step">03</div><h3>→ Выгрузка</h3><p>SQL, Excel, согласования.</p></div>
+    <div class="card warn"><div class="step bad">04</div><h3 class="bad">→ Дни</h3><p>Решение опоздало.</p></div>
+  </div>
+  <div class="num">02 / 10</div>
+</section>
+
+<!-- 3 РЕШЕНИЕ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">решение · 4 шага</div>
+  <h2>AI понимает вопрос — считает база — видно, как посчитано</h2>
+  <div class="grid g4">
+    <div class="card"><div class="step">01 · вопрос</div><h3>Естественный язык</h3><pre>«Выручка по месяцам
+за последний год?»</pre></div>
+    <div class="card"><div class="step">02 · план</div><h3>Строгий JSON</h3><pre>{ intent:"trend",
+  metrics:["revenue"],
+  time: last_n 12 }</pre></div>
+    <div class="card"><div class="step">03 · SQL</div><h3>Компилятор whitelist</h3><pre>SELECT strftime(...),
+  SUM(s.revenue)
+FROM auto_sales …</pre></div>
+    <div class="card good"><div class="step ok">04 · ответ</div><h3>График + вывод</h3><pre>line · 213 млрд ₸
++7.2% · «как посчитано»</pre></div>
+  </div>
+  <div class="num">03 / 10</div>
+</section>
+
+<!-- 4 ВОРКСПЕЙС -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">воркспейс</div>
+  <h2>Вопрос → готовый ответ</h2>
+  <div class="grid g2" style="align-items:center">
+    <div class="card">
+      <div class="mono" style="color:var(--data);font-size:13px">› Какая выручка по месяцам за последний год?</div>
+      <div style="margin-top:12px" class="kpi tnum">213 млрд ₸ <span class="ok" style="font-size:18px">▲ +7.2%</span></div>
+      <div class="bars">
+        <div class="bar" style="height:52%"></div><div class="bar" style="height:61%"></div>
+        <div class="bar" style="height:57%"></div><div class="bar" style="height:70%"></div>
+        <div class="bar" style="height:66%"></div><div class="bar" style="height:82%"></div>
+        <div class="bar" style="height:74%"></div><div class="bar" style="height:88%"></div>
+        <div class="bar" style="height:80%"></div><div class="bar" style="height:95%"></div>
+        <div class="bar" style="height:90%"></div><div class="bar" style="height:100%"></div>
+      </div>
+      <p style="margin-top:10px;color:var(--mut);font-size:13px">Вывод: выручка выросла на 7.2% к
+        сравнимому периоду; пик — июнь. Стоит проверить вклад топ-дилеров.</p>
+    </div>
+    <div>
+      <h3 style="font-size:20px">Всё в одном ответе</h3>
+      <ul>
+        <li>Автоподбор графика по форме результата</li>
+        <li>KPI + дельты (посчитаны детерминированно)</li>
+        <li>Деловой вывод из уже посчитанных чисел</li>
+        <li>Панель «Как посчитано» — прозрачность</li>
+        <li>Follow-up-вопросы одним кликом · экспорт PNG</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">04 / 10</div>
+</section>
+
+<!-- 5 ЯДРО ДОВЕРИЯ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">ядро доверия</div>
+  <h2>LLM не пишет SQL и не видит строк</h2>
+  <div class="grid g2">
+    <div class="card good">
+      <h3 class="ok">LLM получает</h3>
+      <ul><li>модель метрик (id, названия)</li><li>текст вопроса</li><li>уже посчитанные агрегаты</li></ul>
+    </div>
+    <div class="card warn">
+      <h3 class="bad">LLM НЕ получает</h3>
+      <ul><li>сырые строки данных</li><li>право писать исполняемый SQL</li><li>обход RBAC</li></ul>
+    </div>
+  </div>
+  <p class="sub">Semantic Layer — источник истины. Компилятор собирает SQL из whitelist-фрагментов,
+    значения — параметрами. Галлюцинации закрыты <b>архитектурой</b>, а не обещанием.</p>
+  <div class="num">05 / 10</div>
+</section>
+
+<!-- 6 EMBED -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">встраивание · требование №6</div>
+  <h2>Живёт поверх вашей существующей BI</h2>
+  <div class="grid g2" style="align-items:center">
+    <div>
+      <p class="sub" style="margin-top:0">Плавающая кнопка SANA поверх любого дашборда. Не трогаем ваш код,
+        не мигрируем данные. Подключение — одна строка:</p>
+      <pre class="mono" style="margin-top:16px;color:var(--data)">&lt;script src="https://…/widget.js"
+        data-pack="auto"&gt;&lt;/script&gt;</pre>
+    </div>
+    <div class="card" style="background:#eef2f6;color:#0b1512">
+      <div style="font-weight:700;color:#2563eb">Kaz-Analytics BI</div>
+      <div style="height:90px;border:1px solid #dbe3ea;border-radius:8px;margin-top:10px;background:
+        repeating-linear-gradient(90deg,#e8eef4 0 20px,#f5f8fb 20px 40px)"></div>
+      <div style="margin-top:12px;text-align:right"><span style="background:#0b0f0e;color:#22d3ee;padding:8px 14px;border-radius:999px;font-size:12px">✦ Спросить SANA</span></div>
+    </div>
+  </div>
+  <div class="num">06 / 10</div>
+</section>
+
+<!-- 7 БЕЗОПАСНОСТЬ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">безопасность корпоративного уровня · требование №7</div>
+  <h2>Один вопрос — разные данные по правам</h2>
+  <div class="grid g3">
+    <div class="card"><h3>RBAC со scope</h3><p><b class="ok">CEO</b> видит всё · <b class="ok">директор региона</b> — только свой регион. Фильтр ставит сервер, вопросом не обойти.</p></div>
+    <div class="card"><h3>AuditLog</h3><p>Каждый запрос в журнал: кто, что, сколько строк. Готово к SIEM.</p></div>
+    <div class="card"><h3>Данные в контуре</h3><p>Расчёт в вашей БД (self-host ready), AI-адаптер on-prem-ready.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><div class="mono" style="font-size:12px;color:var(--mut)">CEO · «Топ дилеров»</div><p style="margin-top:6px">12 дилеров, все регионы РК</p></div>
+    <div class="card good"><div class="mono" style="font-size:12px;color:var(--mut)">Регион · тот же вопрос</div><p style="margin-top:6px" class="ok">только Алматы · плашка «доступ ограничен регионом»</p></div>
+  </div>
+  <div class="num">07 / 10</div>
+</section>
+
+<!-- 8 МУЛЬТИОТРАСЛЬ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">отраслевая настраиваемость · требование №5</div>
+  <h2>3 отрасли на одном ядре</h2>
+  <div class="grid g3">
+    <div class="card"><h3>🚗 Авто</h3><p>дилеры, модели, продажи, скидки, сервис · 44 724 строки</p></div>
+    <div class="card"><h3>🛒 Ритейл</h3><p>магазины, категории, продажи, возвраты · 19 943 строки</p></div>
+    <div class="card"><h3>🏦 Банк</h3><p>филиалы, продукты, выдачи, остатки · 9 972 строки</p></div>
+  </div>
+  <p class="sub">Новый отраслевой пак — <b>за 30 минут</b>: один файл-описание (метрики, измерения,
+    синонимы) + сид. Ядро (планировщик, компилятор, графики, RBAC, UI) не трогается.</p>
+  <div class="num">08 / 10</div>
+</section>
+
+<!-- 9 ЭТО РАБОТАЕТ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">это работает — не слайдвер</div>
+  <h2>Живой стенд, реальные числа</h2>
+  <div class="grid g4">
+    <div class="card"><div class="kpi tnum">80 000+</div><div class="klbl">строк данных в Turso</div></div>
+    <div class="card"><div class="kpi tnum">3</div><div class="klbl">отрасли · одно ядро</div></div>
+    <div class="card"><div class="kpi tnum">85</div><div class="klbl">тестов зелёных</div></div>
+    <div class="card"><div class="kpi tnum">11/11</div><div class="klbl">prod-verify на проде</div></div>
+  </div>
+  <p class="sub">Ответ по фактическим данным (~80 мс медиана), запись в БД, RBAC, казахский язык,
+    embed поверх чужой BI, авто-инсайты по z-score — всё живое на sana-rho-ten.vercel.app.</p>
+  <div class="num">09 / 10</div>
+</section>
+
+<!-- 10 ПИЛОТ -->
+<section class="slide">
+  <div class="brand"><span class="dot"></span> SANA</div>
+  <div class="tag">готовы к пилоту</div>
+  <h2>2 недели на ваших данных</h2>
+  <p class="sub">Нужен только доступ к витрине и одна встреча по метрикам. Описываем ваш пак по схеме,
+    подключаем read-replica, маппим RBAC на ваши роли — данные остаются в контуре.</p>
+  <div class="grid g3" style="margin-top:2vh">
+    <div class="card"><h3>Неделя 1</h3><p>Semantic Layer по вашей витрине + подключение источника.</p></div>
+    <div class="card"><h3>Неделя 2</h3><p>RBAC, тюнинг вопросов, on-prem AI-адаптер, приёмка.</p></div>
+    <div class="card good"><h3 class="ok">Результат</h3><p>Бизнес спрашивает данные словами и получает ответ за секунды.</p></div>
+  </div>
+  <div style="margin-top:3vh" class="mono">SANA · «Спросите свои данные» &nbsp;·&nbsp; партнёрство: +7 700 110 10 55</div>
+  <div class="num">10 / 10</div>
+</section>
+
+</body>
+</html>
