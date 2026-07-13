@@ -36,7 +36,7 @@ export interface MetricDef {
 
 export interface AskOk {
   ok: true;
-  engine: "anthropic" | "fallback";
+  engine: "anthropic" | "gemini" | "fallback";
   scoped: boolean;
   scopedRegion: string | null;
   plan: unknown;
@@ -59,7 +59,7 @@ export interface AskClarify {
   ok: true;
   clarify: string;
   suggestions: string[];
-  engine: "anthropic" | "fallback";
+  engine: "anthropic" | "gemini" | "fallback";
   scoped: false;
 }
 

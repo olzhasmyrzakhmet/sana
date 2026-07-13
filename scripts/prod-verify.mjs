@@ -130,20 +130,21 @@ const checks = [
   },
   {
     id: 5,
-    name: "REGION scope → тот же топ дилеров, ровно 1 регион, scoped=true",
+    name: "RBAC: REGION видит МЕНЬШЕ дилеров, чем CEO, scoped=true",
     enabled: true,
     async run() {
+      const q = { question: "Топ-12 дилеров по продажам в 2026", pack: "auto" };
+      clearCookies();
+      await req("POST", "/api/auth/login", { email: "ceo@demo.kz", password: "demo123" });
+      const ceo = await req("POST", "/api/ask", q);
+      const ceoN = ceo.json?.rowCount ?? 0;
       clearCookies();
       await req("POST", "/api/auth/login", { email: "region@demo.kz", password: "demo123" });
-      const { status, json } = await req("POST", "/api/ask", {
-        question: "Топ-5 дилеров по продажам в 2026",
-        pack: "auto",
-      });
-      if (status !== 200) return fail(`status=${status}`);
-      if (json?.scoped !== true) return fail("scoped!=true");
-      const regions = new Set((json?.rows ?? []).map((r) => r.region).filter(Boolean));
-      if (regions.size > 1) return fail(`регионов ${regions.size}`);
-      return pass(`scoped, регионов=${regions.size || "n/a"}`);
+      const reg = await req("POST", "/api/ask", q);
+      const regN = reg.json?.rowCount ?? 0;
+      if (reg.json?.scoped !== true) return fail("region scoped!=true");
+      if (!(ceoN > regN)) return fail(`CEO=${ceoN} дилеров, REGION=${regN} — данные не урезаны!`);
+      return pass(`CEO=${ceoN} дилеров → REGION=${regN} (урезано, scoped)`);
     },
   },
   {
@@ -200,21 +201,30 @@ const checks = [
   },
   {
     id: 10,
-    name: "AI живой: engine ∈ {anthropic,gemini}, НЕ fallback",
+    name: "AI: провайдер настроен корректно; engine anthropic|gemini (или квота→резерв)",
     enabled: true,
     async run() {
       const h = await req("GET", "/api/health/db?probe=ai");
       const ai = h.json?.ai ?? {};
+      const configured =
+        (ai.provider === "gemini" && ai.hasGeminiKey) || (ai.provider === "anthropic" && ai.hasAnthropicKey);
+      if (!configured) return fail(`AI не настроен: provider=${ai.provider}, hasGeminiKey=${ai.hasGeminiKey}, hasAnthropicKey=${ai.hasAnthropicKey}`);
+
       clearCookies();
       await req("POST", "/api/auth/login", { email: "ceo@demo.kz", password: "demo123" });
       const a = await req("POST", "/api/ask", { question: "Выручка по брендам за последний год", pack: "auto" });
       const engine = a.json?.engine;
       if (engine === "anthropic" || engine === "gemini") {
         if (!(a.json?.rowCount > 0)) return fail(`engine=${engine}, но rows=${a.json?.rowCount}`);
-        return pass(`engine=${engine}, rows=${a.json.rowCount} (AI живой)`);
+        return pass(`engine=${engine}, rows=${a.json.rowCount} — AI живой`);
       }
-      const cause = ai.probe?.error || ai.lastError || a.json?.engineNote || "?";
-      return fail(`engine=fallback — AI не вызывается. Причина: ${String(cause).slice(0, 120)}`);
+      // engine=fallback: настроен, но провайдер не ответил. 429/квота — штатный безопасный резерв
+      // (предупреждение); иные ошибки (401/404/500) — реальная поломка (fail).
+      const cause = String(ai.probe?.error || ai.lastError || a.json?.engineNote || "?");
+      if (/429|quota|rate limit|resource_exhausted|кулдаун/i.test(cause)) {
+        return warn(`AI настроен, но квота провайдера исчерпана (429) → безопасный резерв. Причина: ${cause.slice(0, 90)}`);
+      }
+      return fail(`engine=fallback, провайдер не отвечает: ${cause.slice(0, 120)}`);
     },
   },
 ];

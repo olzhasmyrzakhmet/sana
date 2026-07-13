@@ -122,7 +122,7 @@ function AnswerBody({
 
       <div className="flex items-center justify-between border-t border-border pt-2 text-[11px] text-muted-foreground">
         <span>посчитано SANA · {resp.rowCount.toLocaleString("ru-RU")} строк</span>
-        <span>{resp.engine === "anthropic" ? "AI-план" : "резервный режим"}</span>
+        <span>{resp.engine === "fallback" ? "резервный режим" : "AI-план"}</span>
       </div>
     </div>
   );

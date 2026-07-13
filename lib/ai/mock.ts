@@ -89,7 +89,10 @@ export function mockPlan(question: string, pack: Pack): Record<string, unknown> 
   if (categoryDim) score += 1; // измерение (напр. «дилер») — слабый сам по себе
   if (tg.grouped) score += 1; // «по месяцам» — группировка по времени
   if (time.mode !== "all") score += 1; // явный период
-  if (score < 2) return null; // низкая уверенность → clarify, а не случайный план
+  // Порог 3: одной метрики ИЛИ одного намерения мало — иначе разговорный вопрос
+  // («стоит ли переживать за продажи?») получил бы уверенный тотал. Нужен второй сигнал
+  // (разрез / период / группировка). Все структурные sampleQuestions набирают ≥3.
+  if (score < 3) return null; // низкая уверенность → clarify, а не случайный план
 
   const metric = explicitMetric ?? pack.defaultMetric;
   let intent: string;
