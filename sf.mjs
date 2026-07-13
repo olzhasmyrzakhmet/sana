@@ -1,0 +1,10 @@
+const B="https://sana-rho-ten.vercel.app";
+let cookie="";
+const lr=await fetch(B+"/api/auth/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:"ceo@demo.kz",password:"demo123"})});
+cookie=(lr.headers.getSetCookie?.()??[]).map(c=>c.split(";")[0]).join("; ");
+const conv="Слушай, а какой дилер у нас хуже всех просел этой весной и почему так вышло?";
+const r=await fetch(B+"/api/ask",{method:"POST",headers:{"content-type":"application/json",cookie},body:JSON.stringify({question:conv,pack:"auto"})});
+const a=await r.json();
+console.log("engine:", a.engine, "| intent:", a.plan?.intent, "| dims:", JSON.stringify(a.plan?.dimensions), "| sort:", JSON.stringify(a.plan?.sort||null), "| rows:", a.rowCount, "| clarify:", !!a.clarify);
+console.log("вывод:", (a.insight?.summary||a.clarify||"").slice(0,180));
+if(a.rows) console.log("top row:", JSON.stringify(a.rows[0]));

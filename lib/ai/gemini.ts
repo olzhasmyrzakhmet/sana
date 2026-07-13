@@ -33,6 +33,7 @@ async function callModel(model: string, system: string, user: string): Promise<s
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": key() },
+    signal: AbortSignal.timeout(14000), // не висим: 14с на вызов → иначе безопасный резерв
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
@@ -67,8 +68,10 @@ async function complete(system: string, user: string): Promise<string> {
     } catch (e) {
       lastErr = e;
       const status = (e as { status?: number }).status;
-      // 404 (нет доступа к модели) / 429 (квота) — пробуем следующую; иначе пробрасываем.
-      if (status === 404 || status === 429) {
+      // Только 404 (модель недоступна на этом ключе) → пробуем следующую модель.
+      // 429 (квота/рейт-лимит) — общий для аккаунта: НЕ перебираем весь список (это долго),
+      // а сразу пробрасываем → провайдер уходит в быстрый безопасный резерв.
+      if (status === 404) {
         if (model === workingModel) workingModel = null;
         continue;
       }
