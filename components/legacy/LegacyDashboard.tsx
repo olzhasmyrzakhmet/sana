@@ -32,12 +32,13 @@ export function LegacyDashboard() {
             <div className="text-sm font-semibold text-slate-900">Kaz-Analytics BI</div>
             <div className="text-[11px] text-slate-500">Корпоративная витрина · v3.2</div>
           </div>
-          <nav className="ml-auto hidden gap-4 text-sm text-slate-500 sm:flex">
+          <nav className="ml-6 hidden select-none items-center gap-4 text-sm text-slate-400 sm:flex" title="демонстрационный макет чужой BI">
             <span className="font-medium text-blue-600">Обзор</span>
-            <span>Продажи</span>
-            <span>Отчёты</span>
-            <span>Настройки</span>
+            <span className="cursor-default">Продажи</span>
+            <span className="cursor-default">Отчёты</span>
+            <span className="cursor-default">Настройки</span>
           </nav>
+          <span className="ml-auto rounded bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-400">демо-макет</span>
         </div>
       </header>
 
