@@ -34,6 +34,15 @@ describe("mockRouter — все sampleQuestions резолвятся в вали
     expect(mockPlan("как думаешь, всё нормально с выручкой?", auto)).toBeNull();
   });
 
+  it("вопрос с сущностью, которую роутер не умеет (регион-значение/сезон/месяц) → clarify", () => {
+    const auto = listPacks()[0];
+    // Пример жюри: Алматы (фильтр по значению) + весна (сезон) — роутер их игнорирует → clarify
+    expect(mockPlan("Покажи как менялась прибыль дилеров Алматы этой весной", auto)).toBeNull();
+    expect(mockPlan("Выручка по дилерам в Астане", auto)).toBeNull();
+    expect(mockPlan("Продажи в марте 2026", auto)).toBeNull();
+    expect(mockPlan("Что было летом с продажами?", auto)).toBeNull();
+  });
+
   it("казахский топ-вопрос → topn/units", () => {
     const auto = listPacks()[0];
     const raw = mockPlan("Өткен айдағы ең көп сатылған модель қандай?", auto);

@@ -21,10 +21,15 @@ function useAiExtras(): boolean {
   return process.env.AI_INSIGHT === "1" && aiMode() !== "none";
 }
 
-// Диагностика: последняя ошибка AI-провайдера (для /api/health/db).
+// Диагностика: счётчики и последняя ошибка AI-провайдера (для /api/health/db).
 let lastAiError: string | null = null;
+let aiCallsAttempted = 0;
+let aiCallsFailed = 0;
 export function getLastAiError(): string | null {
   return lastAiError;
+}
+export function getAiStats() {
+  return { aiCallsAttempted, aiCallsFailed, lastAiError };
 }
 
 interface Adapter {
@@ -91,6 +96,7 @@ export async function planFromQuestion(question: string, pack: Pack): Promise<Pl
   const engine: Engine = mode === "gemini" ? "gemini" : "anthropic";
 
   if (mode !== "none") {
+    aiCallsAttempted++;
     try {
       const ad = await getAdapter(mode);
       const raw = await ad.planRaw(question, manifestJson);
@@ -108,6 +114,7 @@ export async function planFromQuestion(question: string, pack: Pack): Promise<Pl
         return { kind: "plan", plan, engine };
       }
     } catch (e) {
+      aiCallsFailed++;
       lastAiError = e instanceof Error ? e.message : String(e);
       console.error("[ai] провайдер недоступен, резервный режим:", lastAiError);
       aiNote = "резервный режим: AI-провайдер временно недоступен";

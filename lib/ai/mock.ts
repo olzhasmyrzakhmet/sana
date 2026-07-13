@@ -61,6 +61,12 @@ function detectTime(q: string, grain: "month" | "quarter" | "year") {
   return { mode: "all" as const, grain };
 }
 
+// Сущности, которые резервный роутер НЕ умеет честно обработать (конкретные значения
+// региона/города, сезоны, названия месяцев). Если они есть в вопросе — не выдаём план,
+// а уходим в clarify: лучше «уточните», чем ответ, игнорирующий эти сущности.
+const UNSUPPORTED_ENTITY =
+  /алмат|астан|шымкент|караганд|актоб|актюб|атырау|павлодар|костанай|тараз|жамбыл|өскемен|оскемен|кызылорд|усть-камен|семей|уральск|петропавл|кокшетау|талдыкорган|туркестан|весн|осен|зим|летом|летн|январ|феврал|март[ае]|апрел|\bмае\b|\bиюн|\bиюл|август|сентябр|октябр|ноябр|декабр/;
+
 const TOPN = /топ|top|рейтинг|лучш|ең көп|ең жоғар|самы[йе]|наибол/;
 const TREND = /динамик|как менял|как измен|тренд|эволюц/;
 const SHARE = /доля|долю|доли|структур|share|үлес/;
@@ -75,6 +81,8 @@ function detectLimit(q: string): number {
 /** Возвращает сырой план-объект (валидируется zod выше) или null, если не разобрали. */
 export function mockPlan(question: string, pack: Pack): Record<string, unknown> | null {
   const q = norm(question);
+  // Есть распознаваемая сущность, которую роутер не умеет фильтровать/парсить → clarify.
+  if (UNSUPPORTED_ENTITY.test(q)) return null;
   const explicitMetric = detectMetricExplicit(q, pack);
   const categoryDim = detectCategoryDim(q, pack);
   const tg = detectTimeGroup(q);

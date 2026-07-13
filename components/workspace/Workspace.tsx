@@ -7,7 +7,7 @@ import type { AskResponse, ClientPackMeta, FeedItem, HistoryItem, PublicUser } f
 import { AskBar } from "@/components/ask/AskBar";
 import { AnswerCard } from "@/components/ask/AnswerCard";
 import { PackSwitcher } from "@/components/shared/PackSwitcher";
-import { RoleBadge } from "@/components/shared/RoleBadge";
+import { RoleSwitcher } from "./RoleSwitcher";
 import { apiGet, apiPost } from "@/lib/apiClient";
 
 let counter = 0;
@@ -77,7 +77,8 @@ export function Workspace({ user, packs }: { user: PublicUser; packs: ClientPack
             SANA
           </Link>
           <PackSwitcher packs={packs} current={packId} onChange={setPackId} />
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <RoleSwitcher current={user.role} />
             <button
               onClick={() => setTour(true)}
               title="Демо-тур"
@@ -86,13 +87,13 @@ export function Workspace({ user, packs }: { user: PublicUser; packs: ClientPack
               <HelpCircle className="h-3.5 w-3.5" />
               Тур
             </button>
-            <RoleBadge user={user} />
             <button
               onClick={logout}
               title="Выйти"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-foreground"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" />
+              Выйти
             </button>
           </div>
         </div>

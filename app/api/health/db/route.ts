@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, dbInfo } from "@/lib/data/db";
-import { getLastAiError, probeAi } from "@/lib/ai/provider";
+import { getAiStats, probeAi } from "@/lib/ai/provider";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       model: process.env.AI_PROVIDER === "gemini"
         ? (process.env.GEMINI_MODEL ?? "gemini-2.0-flash-lite")
         : (process.env.AI_MODEL ?? ""),
-      lastError: getLastAiError(),
+      ...getAiStats(),
     };
     if (wantProbe) ai.probe = await probeAi(); // активный тест живого AI (?probe=ai)
     return NextResponse.json({ ok: true, db: info, commit, counts, ai });

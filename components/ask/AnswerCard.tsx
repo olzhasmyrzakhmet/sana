@@ -47,10 +47,11 @@ export function AnswerCard({
           <button
             onClick={exportPng}
             disabled={exporting}
-            title="Экспорт PNG"
-            className="shrink-0 rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            title="Экспорт ответа в PNG"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-[var(--data)] hover:text-[var(--data)]"
           >
-            <ImageDown className="h-4 w-4" />
+            <ImageDown className="h-3.5 w-3.5" />
+            {exporting ? "Экспорт…" : "PNG"}
           </button>
         )}
       </div>
