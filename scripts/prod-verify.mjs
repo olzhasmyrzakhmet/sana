@@ -63,8 +63,9 @@ const checks = [
     async run() {
       const { status, json } = await req("GET", "/api/health/db");
       if (status !== 200 || !json?.ok) return fail(`status=${status} ok=${json?.ok}`);
-      if (!(json.counts?.users > 0)) return fail(`users=${json?.counts?.users}`);
-      return pass(`users=${json.counts.users}, adapter=${json.db?.mode}`);
+      if (!(json.counts?.users >= 3)) return fail(`users=${json?.counts?.users} (ожидали ≥3 — БД не засеяна?)`);
+      if (!(json.counts?.auto_sales > 1000)) return fail(`auto_sales=${json?.counts?.auto_sales} (факты не засеяны!)`);
+      return pass(`users=${json.counts.users}, auto_sales=${json.counts.auto_sales}, adapter=${json.db?.mode}`);
     },
   },
   {
@@ -197,6 +198,24 @@ const checks = [
       return pass("clarify возвращён");
     },
   },
+  {
+    id: 10,
+    name: "AI-конфиг: ключ читается рантаймом; engine (anthropic|fallback)",
+    enabled: true,
+    async run() {
+      const h = await req("GET", "/api/health/db");
+      const ai = h.json?.ai ?? {};
+      if (ai.provider !== "anthropic" || !ai.hasAnthropicKey) {
+        return fail(`провайдер не настроен: provider=${ai.provider} hasKey=${ai.hasAnthropicKey}`);
+      }
+      clearCookies();
+      const a = await req("POST", "/api/ask", { question: "Выручка по брендам за последний год", pack: "auto" });
+      const engine = a.json?.engine;
+      if (engine === "anthropic") return pass("engine=anthropic (AI живой)");
+      // ключ читается, но провайдер падает (обычно кредиты) — предупреждение, не фейл
+      return warn(`engine=fallback; причина: ${String(a.json?.engineNote ?? "").slice(0, 80)}`);
+    },
+  },
 ];
 
 function pass(detail) {
@@ -204,6 +223,9 @@ function pass(detail) {
 }
 function fail(detail) {
   return { ok: false, detail };
+}
+function warn(detail) {
+  return { ok: true, warn: true, detail };
 }
 
 async function main() {
@@ -218,7 +240,9 @@ async function main() {
     }
     try {
       const r = await c.run();
-      if (r.ok) {
+      if (r.ok && r.warn) {
+        console.log(`⚠️  [${c.id}] ${c.name}  — ${r.detail}`);
+      } else if (r.ok) {
         console.log(`✅ [${c.id}] ${c.name}  — ${r.detail}`);
       } else {
         failed++;
