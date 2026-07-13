@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, dbInfo } from "@/lib/data/db";
+import { getLastAiError, probeAi } from "@/lib/ai/provider";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,9 +15,10 @@ const PROBE_TABLES = [
   "ask_history",
 ] as const;
 
-export async function GET() {
+export async function GET(req: Request) {
   const info = dbInfo();
   const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
+  const wantProbe = new URL(req.url).searchParams.get("probe") === "ai";
   try {
     const db = await getDb();
     const counts: Record<string, number | null> = {};
@@ -28,11 +30,16 @@ export async function GET() {
         counts[t] = null; // таблицы ещё нет — не валим весь health
       }
     }
-    const ai = {
+    const ai: Record<string, unknown> = {
       provider: process.env.AI_PROVIDER ?? "mock",
       hasAnthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
-      model: process.env.AI_MODEL ?? "",
+      hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+      model: process.env.AI_PROVIDER === "gemini"
+        ? (process.env.GEMINI_MODEL ?? "gemini-2.0-flash")
+        : (process.env.AI_MODEL ?? ""),
+      lastError: getLastAiError(),
     };
+    if (wantProbe) ai.probe = await probeAi(); // активный тест живого AI (?probe=ai)
     return NextResponse.json({ ok: true, db: info, commit, counts, ai });
   } catch (err) {
     return NextResponse.json(

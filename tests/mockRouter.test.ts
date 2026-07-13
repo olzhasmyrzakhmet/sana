@@ -20,10 +20,14 @@ describe("mockRouter — все sampleQuestions резолвятся в вали
     });
   }
 
-  it("чепуха → mockPlan вернул null (→ clarify выше по стеку)", () => {
+  it("чепуха и низкоуверенные вопросы → null (→ clarify, НЕ случайный план)", () => {
     const auto = listPacks()[0];
     expect(mockPlan("приготовь плов", auto)).toBeNull();
     expect(mockPlan("который час", auto)).toBeNull();
+    // Разговорный вопрос не из списка: упоминает «дилер», но без метрики/намерения/периода →
+    // уверенного совпадения нет → clarify, а не уверенная разбивка выручки.
+    expect(mockPlan("Слушай, а какой дилер у нас хуже всех просел этой весной и почему так вышло?", auto)).toBeNull();
+    expect(mockPlan("покажи что-нибудь интересное про продавцов", auto)).toBeNull();
   });
 
   it("казахский топ-вопрос → topn/units", () => {

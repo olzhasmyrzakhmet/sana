@@ -4,10 +4,55 @@ import { packManifest } from "../semantic/registry";
 import { mockPlan, templateInsight, templateFollowups, detectLang } from "./mock";
 import type { DeltaResult } from "../engine/deltas";
 
-export type Engine = "anthropic" | "fallback";
+export type Engine = "anthropic" | "gemini" | "fallback";
+type AiMode = "anthropic" | "gemini" | "none";
 
-function useAnthropic(): boolean {
-  return process.env.AI_PROVIDER === "anthropic" && !!process.env.ANTHROPIC_API_KEY;
+function aiMode(): AiMode {
+  const p = process.env.AI_PROVIDER;
+  if (p === "gemini" && process.env.GEMINI_API_KEY) return "gemini";
+  if (p === "anthropic" && process.env.ANTHROPIC_API_KEY) return "anthropic";
+  return "none";
+}
+
+// Диагностика: последняя ошибка AI-провайдера (для /api/health/db).
+let lastAiError: string | null = null;
+export function getLastAiError(): string | null {
+  return lastAiError;
+}
+
+interface Adapter {
+  planRaw: (q: string, manifest: string, repair?: string) => Promise<unknown>;
+  insightRaw: (q: string, numbers: string, lang: "ru" | "kk") => Promise<{ summary: string; bullets: string[]; nextCheck: string }>;
+  followupsRaw: (planJson: string, ids: string) => Promise<string[]>;
+}
+
+async function getAdapter(mode: AiMode): Promise<Adapter> {
+  if (mode === "gemini") {
+    const m = await import("./gemini");
+    return { planRaw: m.geminiPlanRaw, insightRaw: m.geminiInsightRaw, followupsRaw: m.geminiFollowupsRaw };
+  }
+  const m = await import("./anthropic");
+  return { planRaw: m.anthropicPlanRaw, insightRaw: m.anthropicInsightRaw, followupsRaw: m.anthropicFollowupsRaw };
+}
+
+/** Активный пробник живости AI для health?probe=ai. */
+export async function probeAi(): Promise<{ mode: AiMode; ok: boolean; error?: string; model?: string }> {
+  const mode = aiMode();
+  if (mode === "none") return { mode, ok: false, error: "провайдер/ключ не настроены" };
+  try {
+    if (mode === "gemini") {
+      const m = await import("./gemini");
+      await m.geminiProbe();
+      return { mode, ok: true, model: process.env.GEMINI_MODEL || "gemini-2.0-flash" };
+    }
+    const m = await import("./anthropic");
+    await m.anthropicProbe();
+    return { mode, ok: true, model: process.env.AI_MODEL || "claude-sonnet-4-6" };
+  } catch (e) {
+    const err = e instanceof Error ? e.message : String(e);
+    lastAiError = err;
+    return { mode, ok: false, error: err };
+  }
 }
 
 export type PlanResult =
@@ -18,7 +63,7 @@ function suggestions(pack: Pack): string[] {
   return pack.sampleQuestions.slice(0, 3).map((s) => s.ru);
 }
 function defaultClarify(): string {
-  return "Уточните вопрос: какой показатель и за какой период вас интересует?";
+  return "Уточните вопрос: какой показатель, разрез и за какой период вас интересуют? Например:";
 }
 
 function extractClarify(raw: unknown): string | null {
@@ -35,29 +80,29 @@ function extractClarify(raw: unknown): string | null {
 export async function planFromQuestion(question: string, pack: Pack): Promise<PlanResult> {
   const manifestJson = JSON.stringify(packManifest(pack));
   let aiNote: string | undefined;
+  const mode = aiMode();
+  const engine: Engine = mode === "gemini" ? "gemini" : "anthropic";
 
-  if (useAnthropic()) {
+  if (mode !== "none") {
     try {
-      const { anthropicPlanRaw } = await import("./anthropic");
-      const raw = await anthropicPlanRaw(question, manifestJson);
+      const ad = await getAdapter(mode);
+      const raw = await ad.planRaw(question, manifestJson);
       const clarify = extractClarify(raw);
-      if (clarify) return { kind: "clarify", clarify, suggestions: suggestions(pack), engine: "anthropic" };
+      if (clarify) return { kind: "clarify", clarify, suggestions: suggestions(pack), engine };
       try {
         const plan = parseAndValidatePlan(raw, pack);
-        return { kind: "plan", plan, engine: "anthropic" };
+        return { kind: "plan", plan, engine };
       } catch (e) {
-        // репар: 1 повтор с текстом ошибки
         const hint = e instanceof PlanError ? e.details.join("; ") : String(e);
-        const raw2 = await anthropicPlanRaw(question, manifestJson, hint);
+        const raw2 = await ad.planRaw(question, manifestJson, hint);
         const clarify2 = extractClarify(raw2);
-        if (clarify2) return { kind: "clarify", clarify: clarify2, suggestions: suggestions(pack), engine: "anthropic" };
+        if (clarify2) return { kind: "clarify", clarify: clarify2, suggestions: suggestions(pack), engine };
         const plan = parseAndValidatePlan(raw2, pack);
-        return { kind: "plan", plan, engine: "anthropic" };
+        return { kind: "plan", plan, engine };
       }
     } catch (e) {
-      // Сырую ошибку провайдера (может содержать биллинг/инфраструктуру) — только в лог сервера,
-      // клиенту отдаём нейтральную причину.
-      console.error("[ai] anthropic недоступен, резервный режим:", e instanceof Error ? e.message : String(e));
+      lastAiError = e instanceof Error ? e.message : String(e);
+      console.error("[ai] провайдер недоступен, резервный режим:", lastAiError);
       aiNote = "резервный режим: AI-провайдер временно недоступен";
     }
   }
@@ -80,9 +125,10 @@ export async function makeInsight(
   pack: Pack,
 ): Promise<{ summary: string; bullets: string[]; nextCheck: string }> {
   const lang = detectLang(question);
-  if (useAnthropic()) {
+  const mode = aiMode();
+  if (mode !== "none") {
     try {
-      const { anthropicInsightRaw } = await import("./anthropic");
+      const ad = await getAdapter(mode);
       const numbers = JSON.stringify({
         metric: deltas.primaryMetric,
         total: deltas.total,
@@ -91,28 +137,25 @@ export async function makeInsight(
         topContributor: deltas.topContributor,
         series: deltas.series.slice(0, 12),
       });
-      const r = await anthropicInsightRaw(question, numbers, lang);
+      const r = await ad.insightRaw(question, numbers, lang);
       if (r.summary) return r;
-    } catch {
-      /* fall to template */
+    } catch (e) {
+      lastAiError = e instanceof Error ? e.message : String(e);
     }
   }
   return templateInsight(question, deltas, pack, lang);
 }
 
-export async function makeFollowups(
-  question: string,
-  plan: Plan,
-  pack: Pack,
-): Promise<string[]> {
-  if (useAnthropic()) {
+export async function makeFollowups(question: string, plan: Plan, pack: Pack): Promise<string[]> {
+  const mode = aiMode();
+  if (mode !== "none") {
     try {
-      const { anthropicFollowupsRaw } = await import("./anthropic");
+      const ad = await getAdapter(mode);
       const ids = [...Object.keys(pack.metrics), ...Object.keys(pack.dimensions)].join(",");
-      const r = await anthropicFollowupsRaw(JSON.stringify(plan), ids);
+      const r = await ad.followupsRaw(JSON.stringify(plan), ids);
       if (r.length) return r.slice(0, 3);
-    } catch {
-      /* fall to template */
+    } catch (e) {
+      lastAiError = e instanceof Error ? e.message : String(e);
     }
   }
   return templateFollowups(pack, plan.dimensions);

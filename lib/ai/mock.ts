@@ -79,11 +79,17 @@ export function mockPlan(question: string, pack: Pack): Record<string, unknown> 
   const categoryDim = detectCategoryDim(q, pack);
   const tg = detectTimeGroup(q);
   const time = detectTime(q, tg.grain);
-
   const intentWord = TOPN.test(q) || TREND.test(q) || SHARE.test(q);
-  const matchedSomething =
-    explicitMetric !== null || categoryDim !== null || tg.grouped || intentWord || time.mode !== "all";
-  if (!matchedSomething) return null; // чепуха → выше по стеку вернётся clarify
+
+  // Порог уверенности: резервный роутер НЕ выдаёт уверенный ответ на непонятый вопрос.
+  // Каждый реальный сигнал добавляет очки; ниже порога → null → выше по стеку clarify.
+  let score = 0;
+  if (explicitMetric) score += 2; // явная метрика — сильный сигнал
+  if (intentWord) score += 2; // «топ»/«динамика»/«доля» — явное намерение
+  if (categoryDim) score += 1; // измерение (напр. «дилер») — слабый сам по себе
+  if (tg.grouped) score += 1; // «по месяцам» — группировка по времени
+  if (time.mode !== "all") score += 1; // явный период
+  if (score < 2) return null; // низкая уверенность → clarify, а не случайный план
 
   const metric = explicitMetric ?? pack.defaultMetric;
   let intent: string;

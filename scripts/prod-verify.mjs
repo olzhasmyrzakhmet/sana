@@ -200,20 +200,21 @@ const checks = [
   },
   {
     id: 10,
-    name: "AI-конфиг: ключ читается рантаймом; engine (anthropic|fallback)",
+    name: "AI живой: engine ∈ {anthropic,gemini}, НЕ fallback",
     enabled: true,
     async run() {
-      const h = await req("GET", "/api/health/db");
+      const h = await req("GET", "/api/health/db?probe=ai");
       const ai = h.json?.ai ?? {};
-      if (ai.provider !== "anthropic" || !ai.hasAnthropicKey) {
-        return fail(`провайдер не настроен: provider=${ai.provider} hasKey=${ai.hasAnthropicKey}`);
-      }
       clearCookies();
+      await req("POST", "/api/auth/login", { email: "ceo@demo.kz", password: "demo123" });
       const a = await req("POST", "/api/ask", { question: "Выручка по брендам за последний год", pack: "auto" });
       const engine = a.json?.engine;
-      if (engine === "anthropic") return pass("engine=anthropic (AI живой)");
-      // ключ читается, но провайдер падает (обычно кредиты) — предупреждение, не фейл
-      return warn(`engine=fallback; причина: ${String(a.json?.engineNote ?? "").slice(0, 80)}`);
+      if (engine === "anthropic" || engine === "gemini") {
+        if (!(a.json?.rowCount > 0)) return fail(`engine=${engine}, но rows=${a.json?.rowCount}`);
+        return pass(`engine=${engine}, rows=${a.json.rowCount} (AI живой)`);
+      }
+      const cause = ai.probe?.error || ai.lastError || a.json?.engineNote || "?";
+      return fail(`engine=fallback — AI не вызывается. Причина: ${String(cause).slice(0, 120)}`);
     },
   },
 ];

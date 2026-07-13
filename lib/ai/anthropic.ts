@@ -65,6 +65,11 @@ export async function anthropicInsightRaw(
   };
 }
 
+/** Быстрый пробник живости для /api/health/db?probe=ai. */
+export async function anthropicProbe(): Promise<void> {
+  await complete("Ответь строго JSON.", 'Верни {"ok":true}');
+}
+
 export async function anthropicFollowupsRaw(
   planJson: string,
   manifestIds: string,
